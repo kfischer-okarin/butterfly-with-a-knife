@@ -1,0 +1,14 @@
+vendor
+.bundle
+.DS_Store
+
+# Smaug
+game/builds
+game/metadata/game_metadata.txt
+
+# Emacs
+*~
+.\#*
+\#*\#
+
+dist

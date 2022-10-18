@@ -1,0 +1,9 @@
+logs/
+builds/
+tests/
+exceptions
+Smaug.toml
+
+*~
+.\#*
+\#*\#
