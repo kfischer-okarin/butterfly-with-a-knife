@@ -25,6 +25,10 @@ def process_inputs(inputs, state)
 end
 
 def update(state)
+  # handle_butterfly_movement(state)
+end
+
+def handle_butterfly_movement(state)
   state.velocity[:y] -= GRAVITY
   state.velocity[:y] = MAX_VELOCITY if state.velocity[:y] > MAX_VELOCITY
   state.position[:x] += state.velocity[:x]
