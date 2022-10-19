@@ -13,16 +13,22 @@ end
 
 def setup(args)
   args.state.butterfly = { x: 640, y: 360, v_x: 0, v_y: 0 }
-  args.state.knife = { x: 640, y: 260, length: 200, angle: 0 }
+  args.state.knife = { x: 640, y: 260, angle: 0 }
 end
+
+BUTTERFLY_MASS = 1
+FLAP_POWER = 4
+FLAP_ACCELERATION = FLAP_POWER / BUTTERFLY_MASS
+
+KNIFE_LENGTH = 200
+KNIFE_HALF_LENGTH = KNIFE_LENGTH / 2
 
 GRAVITY = 0.2
 MAX_VELOCITY = 4
-FLAP_STRENGTH = 4
 
 def process_inputs(inputs, state)
   keyboard = inputs.keyboard
-  state.butterfly[:v_y] += FLAP_STRENGTH if keyboard.key_down.space
+  state.butterfly[:v_y] += FLAP_POWER if keyboard.key_down.space
   state.rotate_knife = keyboard.left_right
 end
 
@@ -31,8 +37,8 @@ def update(state)
   knife = state.knife
   knife.angle += state.rotate_knife
   knife_bottom = {
-    x: knife.x - (Math.sin(knife.angle.to_radians) * knife[:length].half),
-    y: knife.y + (Math.cos(knife.angle.to_radians) * knife[:length].half)
+    x: knife.x - (Math.sin(knife.angle.to_radians) * KNIFE_HALF_LENGTH),
+    y: knife.y + (Math.cos(knife.angle.to_radians) * KNIFE_HALF_LENGTH)
   }
   diff_x = state.butterfly[:x] - knife_bottom[:x]
   diff_y = state.butterfly[:y] - knife_bottom[:y]
@@ -61,7 +67,7 @@ end
 
 def render_knife(knife, outputs)
   outputs.primitives << {
-    x: knife[:x] - 8, y: knife[:y] - knife[:length].half - 8, w: 16, h: knife[:length], angle: knife[:angle],
+    x: knife[:x] - 8, y: knife[:y] - KNIFE_HALF_LENGTH - 8, w: 16, h: KNIFE_LENGTH, angle: knife[:angle],
     path: :pixel
   }.sprite!
 end
