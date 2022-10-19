@@ -12,14 +12,30 @@ def tick(args)
 end
 
 def setup(args)
-  args.state.butterfly = { x: 640, y: 360, v_x: 0, v_y: 0 }
-  args.state.knife = { x: 640, y: 260, angle: 0 }
+  args.state.butterfly = build_point_mass(BUTTERFLY_MASS, x: 640, y: 360)
+  args.state.knife = build_rod_mass(KNIFE_MASS, x: 640, y: 260, length: KNIFE_LENGTH)
+end
+
+def build_point_mass(mass, **values)
+  build_rigid_body(values).merge!(m: mass, I: 0)
+end
+
+def build_rod_mass(mass, length:, **values)
+  build_rigid_body(values).merge!(m: mass, I: mass * length * length / 12)
+end
+
+def build_rigid_body(values = nil)
+  {
+    m: 1, x: 640, y: 360, v_x: 0, v_y: 0, F_x: 0, F_y: 0,
+    I: 0, angle: 0, v_angle: 0, torque: 0
+  }.merge!(values || {})
 end
 
 BUTTERFLY_MASS = 1
 FLAP_POWER = 4
 FLAP_ACCELERATION = FLAP_POWER / BUTTERFLY_MASS
 
+KNIFE_MASS = 100
 KNIFE_LENGTH = 200
 KNIFE_HALF_LENGTH = KNIFE_LENGTH / 2
 
