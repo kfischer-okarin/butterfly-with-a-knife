@@ -13,7 +13,7 @@ end
 
 def setup(args)
   args.state.butterfly = build_point_mass(BUTTERFLY_MASS, x: 640, y: 360)
-  args.state.knife = build_rod_mass(KNIFE_MASS, x: 640, y: 260, length: KNIFE_LENGTH)
+  args.state.knife = build_rod_mass(KNIFE_MASS, x: 640, y: 260, length: KNIFE_LENGTH / 10, angle: 90)
 end
 
 def build_point_mass(mass, **values)
@@ -31,43 +31,86 @@ def build_rigid_body(values = nil)
   }.merge!(values || {})
 end
 
-BUTTERFLY_MASS = 1
-FLAP_POWER = 4
-FLAP_ACCELERATION = FLAP_POWER / BUTTERFLY_MASS
+AIR_FRICTION = 0.01
 
-KNIFE_MASS = 100
+BUTTERFLY_MASS = 1
+FLAP_FORCE = 3
+HORIZONTAL_FORCE = 0.1
+
+KNIFE_MASS = 1
 KNIFE_LENGTH = 200
 KNIFE_HALF_LENGTH = KNIFE_LENGTH / 2
 
-GRAVITY = 0.2
-MAX_VELOCITY = 4
+GRAVITY = 0.1
+
+CONNECTION_STRENGTH = 0.05
 
 def process_inputs(inputs, state)
   keyboard = inputs.keyboard
-  state.butterfly[:v_y] += FLAP_POWER if keyboard.key_down.space
-  state.rotate_knife = keyboard.left_right
+  state.butterfly[:F_y] += FLAP_FORCE if keyboard.key_down.space
+  state.butterfly[:F_x] += keyboard.left_right * HORIZONTAL_FORCE
 end
 
 def update(state)
-  # handle_butterfly_movement(state)
-  knife = state.knife
-  knife.angle += state.rotate_knife
-  knife_bottom = {
-    x: knife.x - (Math.sin(knife.angle.to_radians) * KNIFE_HALF_LENGTH),
-    y: knife.y + (Math.cos(knife.angle.to_radians) * KNIFE_HALF_LENGTH)
-  }
-  diff_x = state.butterfly[:x] - knife_bottom[:x]
-  diff_y = state.butterfly[:y] - knife_bottom[:y]
-  state.knife[:x] += diff_x
-  state.knife[:y] += diff_y
-  state.knife_bottom = knife_bottom
+  apply_gravity(state.butterfly)
+  update_body(state.butterfly)
+  apply_gravity(state.knife)
+  update_body(state.knife)
+
+  apply_connection_force(state.butterfly, state.knife)
+  update_body(state.butterfly)
 end
 
-def handle_butterfly_movement(state)
-  state.butterfly[:v_y] -= GRAVITY
-  state.butterfly[:v_y] = MAX_VELOCITY if state.butterfly[:v_y] > MAX_VELOCITY
-  state.butterfly[:x] += state.butterfly[:v_x]
-  state.butterfly[:y] += state.butterfly[:v_y]
+def apply_gravity(body)
+  apply_force(body, force: { x: 0, y: -GRAVITY * body[:m] })
+end
+
+def update_body(body)
+  body[:v_x] = (body[:v_x] * (1 - AIR_FRICTION)) + (body[:F_x] / body[:m])
+  body[:v_y] = (body[:v_y] * (1 - AIR_FRICTION)) + (body[:F_y] / body[:m])
+  body[:x] += body[:v_x]
+  body[:y] += body[:v_y]
+  body[:v_angle] = (body[:v_angle] * (1 - AIR_FRICTION)) + (body[:torque] / body[:I])
+  body[:angle] += body[:v_angle]
+  body[:F_x] = 0
+  body[:F_y] = 0
+  body[:torque] = 0
+end
+
+def apply_connection_force(butterfly, knife)
+  knife_bottom = {
+    x: knife[:x] - (Math.sin(knife.angle.to_radians) * KNIFE_HALF_LENGTH),
+    y: knife[:y] + (Math.cos(knife.angle.to_radians) * KNIFE_HALF_LENGTH)
+  }
+  butterfly_to_knife = {
+    x: knife_bottom[:x] - butterfly[:x],
+    y: knife_bottom[:y] - butterfly[:y]
+  }
+
+  apply_force(
+    butterfly,
+    force: {
+      x: butterfly_to_knife[:x] * CONNECTION_STRENGTH,
+      y: butterfly_to_knife[:y] * CONNECTION_STRENGTH
+    }
+  )
+
+  apply_force(
+    knife,
+    force: {
+      x: -butterfly_to_knife[:x] * CONNECTION_STRENGTH,
+      y: -butterfly_to_knife[:y] * CONNECTION_STRENGTH
+    },
+    position: knife_bottom
+  )
+end
+
+def apply_force(body, force:, position: nil)
+  body[:F_x] += force[:x]
+  body[:F_y] += force[:y]
+  return unless position
+
+  body[:torque] += ((position[:x] - body[:x]) * force[:y]) - ((position[:y] - body[:y]) * force[:x])
 end
 
 def render(state, outputs)
