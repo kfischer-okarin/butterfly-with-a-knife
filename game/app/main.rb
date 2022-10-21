@@ -54,12 +54,10 @@ end
 
 def update(state)
   apply_gravity(state.butterfly)
-  update_body(state.butterfly)
   apply_gravity(state.knife)
-  update_body(state.knife)
-
   apply_connection_force(state.butterfly, state.knife)
   update_body(state.butterfly)
+  update_body(state.knife)
 end
 
 def apply_gravity(body)
