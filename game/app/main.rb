@@ -14,6 +14,7 @@ end
 def setup(args)
   args.state.butterfly = build_point_mass(BUTTERFLY_MASS, x: 640, y: 360)
   args.state.knife = build_rod_mass(KNIFE_MASS, x: 640, y: 260, length: KNIFE_LENGTH / 10, angle: 90)
+  move_knife_to_butterfly(args.state.knife, args.state.butterfly)
 end
 
 def build_point_mass(mass, **values)
@@ -78,13 +79,10 @@ def update_body(body)
 end
 
 def apply_connection_force(butterfly, knife)
-  knife_bottom = {
-    x: knife[:x] - (Math.sin(knife.angle.to_radians) * KNIFE_HALF_LENGTH),
-    y: knife[:y] + (Math.cos(knife.angle.to_radians) * KNIFE_HALF_LENGTH)
-  }
+  knife[:bottom] = calc_knife_bottom(knife)
   butterfly_to_knife = {
-    x: knife_bottom[:x] - butterfly[:x],
-    y: knife_bottom[:y] - butterfly[:y]
+    x: knife[:bottom][:x] - butterfly[:x],
+    y: knife[:bottom][:y] - butterfly[:y]
   }
 
   apply_force(
@@ -101,8 +99,22 @@ def apply_connection_force(butterfly, knife)
       x: -butterfly_to_knife[:x] * CONNECTION_STRENGTH,
       y: -butterfly_to_knife[:y] * CONNECTION_STRENGTH
     },
-    position: knife_bottom
+    position: knife[:bottom]
   )
+end
+
+def calc_knife_bottom(knife)
+  {
+    x: knife[:x] - (Math.sin(knife.angle.to_radians) * KNIFE_HALF_LENGTH),
+    y: knife[:y] + (Math.cos(knife.angle.to_radians) * KNIFE_HALF_LENGTH)
+  }
+end
+
+def move_knife_to_butterfly(knife, butterfly)
+  diff_x = butterfly[:x] - knife[:bottom][:x]
+  diff_y = butterfly[:y] - knife[:bottom][:y]
+  knife[:x] += diff_x
+  knife[:y] += diff_y
 end
 
 def apply_force(body, force:, position: nil)
