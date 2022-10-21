@@ -13,7 +13,8 @@ end
 
 def setup(args)
   args.state.butterfly = build_point_mass(BUTTERFLY_MASS, x: 640, y: 360)
-  args.state.knife = build_rod_mass(KNIFE_MASS, x: 640, y: 260, length: KNIFE_LENGTH / 10, angle: 90)
+  args.state.knife = build_rod_mass(KNIFE_MASS, x: 640, y: 260, length: KNIFE_LENGTH * LENGTH_FACTOR, angle: 90)
+  args.state.knife[:bottom] = calc_knife_bottom(args.state.knife)
   move_knife_to_butterfly(args.state.knife, args.state.butterfly)
 end
 
@@ -35,16 +36,17 @@ end
 AIR_FRICTION = 0.01
 
 BUTTERFLY_MASS = 1
-FLAP_FORCE = 3
-HORIZONTAL_FORCE = 0.1
+FLAP_FORCE = 6
+HORIZONTAL_FORCE = 0.15
 
-KNIFE_MASS = 1
+KNIFE_MASS = 2
 KNIFE_LENGTH = 200
+LENGTH_FACTOR = 0.15
 KNIFE_HALF_LENGTH = KNIFE_LENGTH / 2
 
 GRAVITY = 0.1
 
-CONNECTION_STRENGTH = 0.05
+CONNECTION_STRENGTH = 0.03
 
 def process_inputs(inputs, state)
   keyboard = inputs.keyboard
