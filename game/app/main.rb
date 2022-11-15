@@ -13,7 +13,7 @@ end
 
 def setup(args)
   args.state.butterfly = build_point_mass(BUTTERFLY_MASS, x: 640, y: 360).merge!(ticks_since_flap: 0)
-  args.state.knife = build_rod_mass(KNIFE_MASS, x: 640, y: 260, length: KNIFE_LENGTH * LENGTH_FACTOR, angle: 90)
+  args.state.knife = build_rod_mass(KNIFE_MASS, x: 640, y: 260, length: KNIFE_LENGTH * LENGTH_FACTOR, angle: 270)
   args.state.knife[:bottom] = calc_knife_bottom(args.state.knife)
   move_knife_to_butterfly(args.state.knife, args.state.butterfly)
 end
@@ -137,14 +137,14 @@ end
 def render_butterfly(butterfly, outputs)
   path = butterfly[:ticks_since_flap] < 5 ? 'sprites/butterfly_flap.png' : 'sprites/butterfly.png'
   outputs.primitives << {
-    x: butterfly[:x] - 140, y: butterfly[:y] - 100, w: 256, h: 256, path: path
+    x: butterfly[:x] - 100, y: butterfly[:y] - 100, w: 256, h: 256, path: path
   }.sprite!
 end
 
 def render_knife(knife, outputs)
   outputs.primitives << {
-    x: knife[:x] - 8, y: knife[:y] - KNIFE_HALF_LENGTH - 8, w: 16, h: KNIFE_LENGTH, angle: knife[:angle],
-    path: :pixel
+    x: knife[:x] - 8, y: knife[:y] - KNIFE_HALF_LENGTH - 8, w: 61, h: KNIFE_LENGTH, angle: knife[:angle] + 180,
+    path: 'sprites/knife.png'
   }.sprite!
 end
 
