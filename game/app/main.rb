@@ -12,7 +12,7 @@ def tick(args)
 end
 
 def setup(args)
-  args.state.butterfly = build_point_mass(BUTTERFLY_MASS, x: 640, y: 360)
+  args.state.butterfly = build_point_mass(BUTTERFLY_MASS, x: 640, y: 360).merge!(ticks_since_flap: 0)
   args.state.knife = build_rod_mass(KNIFE_MASS, x: 640, y: 260, length: KNIFE_LENGTH * LENGTH_FACTOR, angle: 90)
   args.state.knife[:bottom] = calc_knife_bottom(args.state.knife)
   move_knife_to_butterfly(args.state.knife, args.state.butterfly)
@@ -50,7 +50,10 @@ CONNECTION_STRENGTH = 0.03
 
 def process_inputs(inputs, state)
   keyboard = inputs.keyboard
-  state.butterfly[:F_y] += FLAP_FORCE if keyboard.key_down.space
+  if keyboard.key_down.space
+    state.butterfly[:F_y] += FLAP_FORCE
+    state.butterfly[:ticks_since_flap] = -1
+  end
   state.butterfly[:F_x] += keyboard.left_right * HORIZONTAL_FORCE
 end
 
@@ -60,6 +63,7 @@ def update(state)
   apply_connection_force(state.butterfly, state.knife)
   update_body(state.butterfly)
   update_body(state.knife)
+  state.butterfly[:ticks_since_flap] += 1
 end
 
 def apply_gravity(body)
@@ -131,9 +135,10 @@ def render(state, outputs)
 end
 
 def render_butterfly(butterfly, outputs)
+  path = butterfly[:ticks_since_flap] < 5 ? 'sprites/butterfly_flap.png' : 'sprites/butterfly.png'
   outputs.primitives << {
-    x: butterfly[:x] - 16, y: butterfly[:y] - 16, w: 32, h: 32
-  }.solid!
+    x: butterfly[:x] - 140, y: butterfly[:y] - 100, w: 256, h: 256, path: path
+  }.sprite!
 end
 
 def render_knife(knife, outputs)
