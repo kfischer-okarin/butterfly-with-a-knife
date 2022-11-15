@@ -135,10 +135,10 @@ def render(state, outputs)
 end
 
 def render_butterfly(butterfly, outputs)
-  path = butterfly[:ticks_since_flap] < 5 ? 'sprites/butterfly_flap.png' : 'sprites/butterfly.png'
-  outputs.primitives << {
-    x: butterfly[:x] - 100, y: butterfly[:y] - 100, w: 256, h: 256, path: path
-  }.sprite!
+  suffix = butterfly[:ticks_since_flap] < 5 ? '_flap.png' : '.png'
+  rect = { x: butterfly[:x] - 93, y: butterfly[:y] - 50, w: 187, h: 196 }
+  outputs.primitives << rect.to_sprite(path: "sprites/butterfly#{suffix}")
+  outputs.primitives << { x: butterfly[:x] - 8, y: butterfly[:y] - 8, w: 16, h: 16, r: 255 }.solid! if $debug.debug_mode?
 end
 
 def render_knife(knife, outputs)
