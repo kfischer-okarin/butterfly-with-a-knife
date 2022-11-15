@@ -130,22 +130,20 @@ def apply_force(body, force:, position: nil)
 end
 
 def render(state, outputs)
-  render_butterfly state.butterfly, outputs
-  render_knife state.knife, outputs
+  render_butterfly state.butterfly, state.knife, outputs
 end
 
-def render_butterfly(butterfly, outputs)
+def render_butterfly(butterfly, knife, outputs)
   suffix = butterfly[:ticks_since_flap] < 5 ? '_flap.png' : '.png'
   rect = { x: butterfly[:x] - 93, y: butterfly[:y] - 50, w: 187, h: 196 }
   outputs.primitives << rect.to_sprite(path: "sprites/butterfly#{suffix}")
+  knife_rect = { x: knife[:x] - 38, y: knife[:y] - KNIFE_HALF_LENGTH + 10, w: 61, h: KNIFE_LENGTH, angle: knife[:angle] }
+  outputs.primitives << knife_rect.to_sprite(angle: knife[:angle] + 180, path: 'sprites/knife.png')
+  outputs.primitives << rect.to_border(r: 255) if $debug.debug_mode?
+  outputs.primitives << knife_rect.to_sprite(path: :pixel, r: 255, g: 0, b: 0, a: 64) if $debug.debug_mode?
   outputs.primitives << { x: butterfly[:x] - 8, y: butterfly[:y] - 8, w: 16, h: 16, r: 255 }.solid! if $debug.debug_mode?
-end
-
-def render_knife(knife, outputs)
-  outputs.primitives << {
-    x: knife[:x] - 8, y: knife[:y] - KNIFE_HALF_LENGTH - 8, w: 61, h: KNIFE_LENGTH, angle: knife[:angle] + 180,
-    path: 'sprites/knife.png'
-  }.sprite!
+  outputs.primitives << { x: knife[:x] - 8, y: knife[:y] - 8, w: 16, h: 16, r: 255 }.solid! if $debug.debug_mode?
+  outputs.primitives << { x: knife[:bottom][:x] - 8, y: knife[:bottom][:y] - 8, w: 16, h: 16, r: 255 }.solid! if $debug.debug_mode?
 end
 
 $gtk.reset
