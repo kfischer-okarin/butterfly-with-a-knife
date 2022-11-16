@@ -15,6 +15,7 @@ def setup(args)
   args.state.butterfly = build_point_mass(BUTTERFLY_MASS, x: 640, y: 360).merge!(ticks_since_flap: 0)
   args.state.knife = build_rod_mass(KNIFE_MASS, x: 640, y: 260, length: KNIFE_LENGTH * LENGTH_FACTOR, angle: 270)
   update_knife_points args.state.knife
+  args.state.spider = { x: 1000, y: 200  }
   args.state.start_time = Time.now.to_f
   move_knife_to_butterfly(args.state.knife, args.state.butterfly)
 end
@@ -66,6 +67,7 @@ def update(state)
   update_body(state.butterfly)
   update_body(state.knife)
   update_butterfly(state.butterfly)
+  check_knife_collision(state.knife, state.spider)
 end
 
 def update_knife_points(knife)
@@ -134,6 +136,39 @@ def update_butterfly(butterfly)
   butterfly[:ticks_since_flap] += 1
 end
 
+def check_knife_collision(knife, spider)
+  result = line_circle_intersection(
+    { x1: knife[:blade_bottom][:x], y1: knife[:blade_bottom][:y], x2: knife[:blade_top][:x], y2: knife[:blade_top][:y] },
+    { x: spider[:x], y: spider[:y], r: 75 }
+  )
+
+  spider[:hit] = result
+end
+
+def line_circle_intersection(line, circle)
+  line_origin = { x: line[:x1], y: line[:y1] }
+  line_vector = { x: line[:x2] - line[:x1], y: line[:y2] - line[:y1] }
+  circle_to_line_origin = { x: line_origin[:x] - circle[:x], y: line_origin[:y] - circle[:y] }
+  a = line_vector[:x] * line_vector[:x] + line_vector[:y] * line_vector[:y]
+  b = 2 * (line_vector[:x] * circle_to_line_origin[:x] + line_vector[:y] * circle_to_line_origin[:y])
+  c = circle_to_line_origin[:x] * circle_to_line_origin[:x] + circle_to_line_origin[:y] * circle_to_line_origin[:y] - circle[:r] * circle[:r]
+  discriminant = b * b - 4 * a * c
+  if discriminant < 0
+    return nil
+  else
+    discriminant = Math.sqrt(discriminant)
+    t1 = (-b - discriminant) / (2 * a)
+    t2 = (-b + discriminant) / (2 * a)
+    if t1 >= 0 && t1 <= 1
+      return t1
+    elsif t2 >= 0 && t2 <= 1
+      return t2
+    else
+      return nil
+    end
+  end
+end
+
 def move_knife_to_butterfly(knife, butterfly)
   diff_x = butterfly[:x] - knife[:bottom][:x]
   diff_y = butterfly[:y] - knife[:bottom][:y]
@@ -151,6 +186,7 @@ end
 
 def render(state, outputs)
   render_butterfly state.butterfly, state.knife, outputs
+  render_spider state.spider, outputs
   render_ui state, outputs
 end
 
@@ -173,6 +209,12 @@ def render_butterfly(butterfly, knife, outputs)
   outputs.primitives << { x: knife[:blade_bottom][:x] - 8, y: knife[:blade_bottom][:y] - 8, w: 16, h: 16, g: 255 }.solid!
   outputs.primitives << { x: knife[:blade_top][:x] - 8, y: knife[:blade_top][:y] - 8, w: 16, h: 16, g: 255 }.solid!
   outputs.primitives << { x: knife[:bottom][:x]  - 8, y: knife[:bottom][:y] - 8, w: 16, h: 16, r: 255 }.solid!
+end
+
+def render_spider(spider, outputs)
+  color = spider[:hit] ? { r: 255, g: 0, b: 0 } : { r: 255, g: 255, b: 255 }
+  outputs.primitives << { x: spider[:x] - 75, y: spider[:y] - 75, w: 150, h: 150, path: 'sprites/spider_body.png' }.sprite!(color)
+  outputs.primitives << { x: spider[:x] - 8, y: spider[:y] - 8, w: 16, h: 16, r: 255 }.solid! if $debug.debug_mode?
 end
 
 def render_ui(state, outputs)
