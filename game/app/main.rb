@@ -15,6 +15,7 @@ def setup(args)
   args.state.butterfly = build_point_mass(BUTTERFLY_MASS, x: 640, y: 360).merge!(ticks_since_flap: 0)
   args.state.knife = build_rod_mass(KNIFE_MASS, x: 640, y: 260, length: KNIFE_LENGTH * LENGTH_FACTOR, angle: 270)
   args.state.knife[:bottom] = calc_knife_bottom(args.state.knife)
+  args.state.start_time = Time.now.to_f
   move_knife_to_butterfly(args.state.knife, args.state.butterfly)
 end
 
@@ -131,6 +132,7 @@ end
 
 def render(state, outputs)
   render_butterfly state.butterfly, state.knife, outputs
+  render_ui state, outputs
 end
 
 def render_butterfly(butterfly, knife, outputs)
@@ -144,6 +146,17 @@ def render_butterfly(butterfly, knife, outputs)
   outputs.primitives << { x: butterfly[:x] - 8, y: butterfly[:y] - 8, w: 16, h: 16, r: 255 }.solid! if $debug.debug_mode?
   outputs.primitives << { x: knife[:x] - 8, y: knife[:y] - 8, w: 16, h: 16, r: 255 }.solid! if $debug.debug_mode?
   outputs.primitives << { x: knife[:bottom][:x] - 8, y: knife[:bottom][:y] - 8, w: 16, h: 16, r: 255 }.solid! if $debug.debug_mode?
+end
+
+def render_ui(state, outputs)
+  remaining_time = [20 - (Time.now.to_f - state.start_time).floor, 0].max
+  outputs.primitives << {
+    x: 640,
+    y: 700,
+    size_enum: 5,
+    alignment_enum: 1,
+    text: '%02d' % remaining_time,
+  }.label!
 end
 
 $gtk.reset
