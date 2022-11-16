@@ -156,7 +156,11 @@ def render_butterfly(butterfly, knife, outputs)
   suffix = butterfly[:ticks_since_flap] < 5 ? '_flap.png' : '.png'
   rect = { x: butterfly[:x] - 93, y: butterfly[:y] - 50, w: 187, h: 196 }
   outputs.primitives << rect.to_sprite(path: "sprites/butterfly#{suffix}")
-  knife_rect = { x: knife[:x] - 38, y: knife[:y] - KNIFE_HALF_LENGTH + 10, w: 61, h: KNIFE_LENGTH, angle: knife[:angle] }
+  knife_rect = {
+    x: knife[:x] - 30, y: knife[:y] - KNIFE_HALF_LENGTH,
+    w: 61, h: KNIFE_LENGTH,
+    angle: knife[:angle], angle_anchor_x: 0.5, angle_anchor_y: 0.5
+  }
   outputs.primitives << knife_rect.to_sprite(angle: knife[:angle] + 180, path: 'sprites/knife.png')
   outputs.primitives << rect.to_border(r: 255) if $debug.debug_mode?
   outputs.primitives << knife_rect.to_sprite(path: :pixel, r: 255, g: 0, b: 0, a: 64) if $debug.debug_mode?
