@@ -69,12 +69,23 @@ def update(state)
 end
 
 def update_knife_points(knife)
-  sin = Math.sin(knife.angle.to_radians)
-  cos = Math.cos(knife.angle.to_radians)
-  knife[:bottom] = {
-    x: knife[:x] - (sin * KNIFE_HALF_LENGTH),
-    y: knife[:y] + (cos * KNIFE_HALF_LENGTH)
-  }
+  rotator = PointRotator.new knife, knife[:angle]
+  knife[:bottom] = rotator.rotate(x: 0, y: KNIFE_HALF_LENGTH)
+end
+
+class PointRotator
+  def initialize(center, angle)
+    @center = center
+    @sin = Math.sin(angle.to_radians)
+    @cos = Math.cos(angle.to_radians)
+  end
+
+  def rotate(relative_point)
+    {
+      x: @center[:x] + (relative_point[:x] * @cos - relative_point[:y] * @sin),
+      y: @center[:y] + (relative_point[:x] * @sin + relative_point[:y] * @cos)
+    }
+  end
 end
 
 def apply_gravity(body)
