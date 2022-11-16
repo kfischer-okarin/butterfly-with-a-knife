@@ -67,6 +67,7 @@ def update(state)
   update_body(state.butterfly)
   update_body(state.knife)
   update_butterfly(state.butterfly)
+  update_knife(state.knife)
   check_knife_collision(state.knife, state.spider)
 end
 
@@ -74,6 +75,7 @@ def update_knife_points(knife)
   rotator = PointRotator.new knife, knife[:angle]
   knife[:bottom] = rotator.rotate(x: 0, y: KNIFE_HALF_LENGTH)
   knife[:blade_bottom] = rotator.rotate(x: -20, y: 40)
+  knife[:previous_blade_top] = knife[:blade_top] || rotator.rotate(x: 0, y: -80)
   knife[:blade_top] = rotator.rotate(x: 0, y: -80)
 end
 
@@ -136,13 +138,25 @@ def update_butterfly(butterfly)
   butterfly[:ticks_since_flap] += 1
 end
 
+def update_knife(knife)
+  knife[:tip_v] = {
+    x: knife[:blade_top][:x] - knife[:previous_blade_top][:x],
+    y: knife[:blade_top][:y] - knife[:previous_blade_top][:y]
+  }
+  knife[:tip_speed] = Math.sqrt(
+    knife[:tip_v][:x] * knife[:tip_v][:x] + knife[:tip_v][:y] * knife[:tip_v][:y]
+  )
+
+  knife[:cut] = knife[:v_angle] < -3 && knife[:tip_speed] > 7
+end
+
 def check_knife_collision(knife, spider)
   result = line_circle_intersection(
     { x1: knife[:blade_bottom][:x], y1: knife[:blade_bottom][:y], x2: knife[:blade_top][:x], y2: knife[:blade_top][:y] },
     { x: spider[:x], y: spider[:y], r: 75 }
   )
 
-  spider[:hit] = result
+  spider[:hit] = result && knife[:cut]
 end
 
 def line_circle_intersection(line, circle)
@@ -226,6 +240,9 @@ def render_ui(state, outputs)
     alignment_enum: 1,
     text: '%02d' % remaining_time,
   }.label!
+  return unless $debug.debug_mode?
+
+  $debug.log "knife tip speed: #{state.knife[:tip_speed]}"
 end
 
 $gtk.reset
