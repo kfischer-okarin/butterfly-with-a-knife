@@ -64,7 +64,7 @@ def update(state)
   apply_connection_force(state.butterfly, state.knife)
   update_body(state.butterfly)
   update_body(state.knife)
-  state.butterfly[:ticks_since_flap] += 1
+  update_butterfly(state.butterfly)
 end
 
 def apply_gravity(body)
@@ -106,6 +106,10 @@ def apply_connection_force(butterfly, knife)
     },
     position: knife[:bottom]
   )
+end
+
+def update_butterfly(butterfly)
+  butterfly[:ticks_since_flap] += 1
 end
 
 def calc_knife_bottom(knife)
