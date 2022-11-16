@@ -8,11 +8,14 @@ def tick(args)
   setup(args) if args.tick_count.zero?
   process_inputs(args.inputs, args.state)
   update(args.state)
-  render(args.state, args.outputs)
+  render(args.state, args.outputs, args.audio)
 end
 
 def setup(args)
-  args.state.butterfly = build_point_mass(BUTTERFLY_MASS, x: 640, y: 360).merge!(ticks_since_flap: 0)
+  args.state.butterfly = build_point_mass(BUTTERFLY_MASS, x: 640, y: 360).merge!(
+    ticks_since_flap: 0,
+    ticks_since_audio: 0
+  )
   args.state.knife = build_rod_mass(KNIFE_MASS, x: 640, y: 260, length: KNIFE_LENGTH * LENGTH_FACTOR, angle: 270)
   update_knife_points args.state.knife
   args.state.spider = { x: 1000, y: 200  }
@@ -136,6 +139,7 @@ end
 
 def update_butterfly(butterfly)
   butterfly[:ticks_since_flap] += 1
+  butterfly[:ticks_since_audio] += 1
 end
 
 def update_knife(knife)
@@ -198,13 +202,13 @@ def apply_force(body, force:, position: nil)
   body[:torque] += ((position[:x] - body[:x]) * force[:y]) - ((position[:y] - body[:y]) * force[:x])
 end
 
-def render(state, outputs)
-  render_butterfly state.butterfly, state.knife, outputs
+def render(state, outputs, audio)
+  render_butterfly state.butterfly, state.knife, outputs, audio
   render_spider state.spider, outputs
   render_ui state, outputs
 end
 
-def render_butterfly(butterfly, knife, outputs)
+def render_butterfly(butterfly, knife, outputs, audio)
   suffix = butterfly[:ticks_since_flap] < 5 ? '_flap.png' : '.png'
   rect = { x: butterfly[:x] - 93, y: butterfly[:y] - 50, w: 187, h: 196 }
   outputs.primitives << rect.to_sprite(path: "sprites/butterfly#{suffix}")
@@ -214,6 +218,14 @@ def render_butterfly(butterfly, knife, outputs)
     angle: knife[:angle], angle_anchor_x: 0.5, angle_anchor_y: 0.5
   }
   outputs.primitives << knife_rect.to_sprite(angle: knife[:angle] + 180, path: 'sprites/knife.png')
+
+  if butterfly[:ticks_since_audio] > 5 && butterfly[:ticks_since_flap].zero?
+    butterfly[:ticks_since_audio] = -1
+    audio[:butterfly_flap] = {
+      input: "audio/flap#{(rand * 3).ceil}.wav"
+    }
+  end
+
   return unless $debug.debug_mode?
 
   outputs.primitives << rect.to_border(r: 255)
