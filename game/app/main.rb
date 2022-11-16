@@ -14,7 +14,7 @@ end
 def setup(args)
   args.state.butterfly = build_point_mass(BUTTERFLY_MASS, x: 640, y: 360).merge!(ticks_since_flap: 0)
   args.state.knife = build_rod_mass(KNIFE_MASS, x: 640, y: 260, length: KNIFE_LENGTH * LENGTH_FACTOR, angle: 270)
-  args.state.knife[:bottom] = calc_knife_bottom(args.state.knife)
+  update_knife_points args.state.knife
   args.state.start_time = Time.now.to_f
   move_knife_to_butterfly(args.state.knife, args.state.butterfly)
 end
@@ -59,12 +59,22 @@ def process_inputs(inputs, state)
 end
 
 def update(state)
+  update_knife_points(state.knife)
   apply_gravity(state.butterfly)
   apply_gravity(state.knife)
   apply_connection_force(state.butterfly, state.knife)
   update_body(state.butterfly)
   update_body(state.knife)
   update_butterfly(state.butterfly)
+end
+
+def update_knife_points(knife)
+  sin = Math.sin(knife.angle.to_radians)
+  cos = Math.cos(knife.angle.to_radians)
+  knife[:bottom] = {
+    x: knife[:x] - (sin * KNIFE_HALF_LENGTH),
+    y: knife[:y] + (cos * KNIFE_HALF_LENGTH)
+  }
 end
 
 def apply_gravity(body)
@@ -84,7 +94,6 @@ def update_body(body)
 end
 
 def apply_connection_force(butterfly, knife)
-  knife[:bottom] = calc_knife_bottom(knife)
   butterfly_to_knife = {
     x: knife[:bottom][:x] - butterfly[:x],
     y: knife[:bottom][:y] - butterfly[:y]
@@ -110,13 +119,6 @@ end
 
 def update_butterfly(butterfly)
   butterfly[:ticks_since_flap] += 1
-end
-
-def calc_knife_bottom(knife)
-  {
-    x: knife[:x] - (Math.sin(knife.angle.to_radians) * KNIFE_HALF_LENGTH),
-    y: knife[:y] + (Math.cos(knife.angle.to_radians) * KNIFE_HALF_LENGTH)
-  }
 end
 
 def move_knife_to_butterfly(knife, butterfly)
