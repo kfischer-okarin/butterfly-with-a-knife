@@ -1,13 +1,13 @@
 [project]
-name = "gamename"
-title = "Game Name"
+name = "butterfly_with_a_knife"
+title = "Butterfly with a knife"
 version = "0.1.0"
 authors = ["Kevin Fischer"]
 icon = "metadata/icon.png"
 compile_ruby = false
 
 [dragonruby]
-version = "3.18"
+version = "3.24"
 edition = "pro"
 
 [dependencies]
