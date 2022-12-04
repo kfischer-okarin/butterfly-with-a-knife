@@ -16,7 +16,12 @@ def setup(args)
     ticks_since_flap: 0,
     ticks_since_audio: 0
   )
-  args.state.knife = build_rod_mass(KNIFE_MASS, x: 640, y: 260, length: KNIFE_LENGTH * LENGTH_FACTOR, angle: 270)
+  args.state.knife = build_rod_mass(
+    KNIFE_MASS,
+    x: 640, y: 260, length: KNIFE_LENGTH * LENGTH_FACTOR, angle: 270
+  ).merge!(
+    ticks_since_audio: 0
+  )
   update_knife_points args.state.knife
   args.state.spider = { x: 1000, y: 200  }
   args.state.start_time = Time.now.to_f
@@ -108,6 +113,7 @@ def update_body(body)
   body[:y] += body[:v_y]
   body[:v_angle] = (body[:v_angle] * (1 - AIR_FRICTION)) + (body[:torque] / body[:I])
   body[:angle] += body[:v_angle]
+  body[:angle] = body[:angle] % 360
   body[:F_x] = 0
   body[:F_y] = 0
   body[:torque] = 0
@@ -148,10 +154,12 @@ def update_knife(knife)
     y: knife[:blade_top][:y] - knife[:previous_blade_top][:y]
   }
   knife[:tip_speed] = Math.sqrt(
-    knife[:tip_v][:x] * knife[:tip_v][:x] + knife[:tip_v][:y] * knife[:tip_v][:y]
+    (knife[:tip_v][:x]**2) + (knife[:tip_v][:y]**2)
   )
 
-  knife[:cut] = knife[:v_angle] < -3 && knife[:tip_speed] > 7
+  # 0 degree is down, 90 is right, 180 is up, 270 is left
+  knife[:cut] = knife[:angle] > 100 && knife[:angle] < 120 && knife[:v_angle] < -3 && knife[:tip_speed] > 7
+  knife[:ticks_since_audio] += 1
 end
 
 def check_knife_collision(knife, spider)
@@ -223,6 +231,14 @@ def render_butterfly(butterfly, knife, outputs, audio)
     butterfly[:ticks_since_audio] = -1
     audio[:butterfly_flap] = {
       input: "audio/flap#{(rand * 3).ceil}.wav"
+    }
+  end
+
+  if knife[:cut] && knife[:ticks_since_audio] > 60
+    knife[:ticks_since_audio] = -1
+    audio[:knife_cut] = {
+      input: "audio/woosh#{(rand * 3).ceil}.wav",
+      pitch: 0.5 + (rand * 0.5)
     }
   end
 
