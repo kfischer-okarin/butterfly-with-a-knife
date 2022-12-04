@@ -24,7 +24,7 @@ def setup(args)
     ticks_since_audio: 0
   )
   update_knife_points args.state.knife
-  args.state.spider = { x: 1000, y: 200  }
+  args.state.spider = { x: 1000, y: 200 }
   args.state.start_time = Time.now.to_f
   move_knife_to_butterfly(args.state.knife, args.state.butterfly)
 end
@@ -165,42 +165,49 @@ def update_knife(knife)
   knife[:ticks_since_cut] += 1
   if knife[:cut]
     knife[:cut_position] = knife[:blade_top].dup
+    knife[:cut_hitbox] = {
+      x: knife[:cut_position][:x], y: knife[:cut_position][:y] - 130,
+      w: 160, h: 160
+    }
     knife[:ticks_since_cut] = 0
   end
 end
 
 def check_knife_collision(knife, spider)
-  result = line_circle_intersection(
-    { x1: knife[:blade_bottom][:x], y1: knife[:blade_bottom][:y], x2: knife[:blade_top][:x], y2: knife[:blade_top][:y] },
-    { x: spider[:x], y: spider[:y], r: 75 }
-  )
+  if knife[:ticks_since_cut] < 3 && knife[:cut_hitbox]
+    spider_hitbox = {
+      x: spider[:x] - 37, y: spider[:y] - 37, w: 75, h: 75
+    }
 
-  spider[:hit] = result && knife[:cut]
-end
-
-def line_circle_intersection(line, circle)
-  line_origin = { x: line[:x1], y: line[:y1] }
-  line_vector = { x: line[:x2] - line[:x1], y: line[:y2] - line[:y1] }
-  circle_to_line_origin = { x: line_origin[:x] - circle[:x], y: line_origin[:y] - circle[:y] }
-  a = line_vector[:x] * line_vector[:x] + line_vector[:y] * line_vector[:y]
-  b = 2 * (line_vector[:x] * circle_to_line_origin[:x] + line_vector[:y] * circle_to_line_origin[:y])
-  c = circle_to_line_origin[:x] * circle_to_line_origin[:x] + circle_to_line_origin[:y] * circle_to_line_origin[:y] - circle[:r] * circle[:r]
-  discriminant = b * b - 4 * a * c
-  if discriminant < 0
-    return nil
+    spider[:hit] = knife[:cut_hitbox].intersect_rect?(spider_hitbox)
   else
-    discriminant = Math.sqrt(discriminant)
-    t1 = (-b - discriminant) / (2 * a)
-    t2 = (-b + discriminant) / (2 * a)
-    if t1 >= 0 && t1 <= 1
-      return t1
-    elsif t2 >= 0 && t2 <= 1
-      return t2
-    else
-      return nil
-    end
+    spider[:hit] = false
   end
 end
+
+# def line_circle_intersection(line, circle)
+#   line_origin = { x: line[:x1], y: line[:y1] }
+#   line_vector = { x: line[:x2] - line[:x1], y: line[:y2] - line[:y1] }
+#   circle_to_line_origin = { x: line_origin[:x] - circle[:x], y: line_origin[:y] - circle[:y] }
+#   a = line_vector[:x] * line_vector[:x] + line_vector[:y] * line_vector[:y]
+#   b = 2 * (line_vector[:x] * circle_to_line_origin[:x] + line_vector[:y] * circle_to_line_origin[:y])
+#   c = circle_to_line_origin[:x] * circle_to_line_origin[:x] + circle_to_line_origin[:y] * circle_to_line_origin[:y] - circle[:r] * circle[:r]
+#   discriminant = b * b - 4 * a * c
+#   if discriminant < 0
+#     return nil
+#   else
+#     discriminant = Math.sqrt(discriminant)
+#     t1 = (-b - discriminant) / (2 * a)
+#     t2 = (-b + discriminant) / (2 * a)
+#     if t1 >= 0 && t1 <= 1
+#       return t1
+#     elsif t2 >= 0 && t2 <= 1
+#       return t2
+#     else
+#       return nil
+#     end
+#   end
+# end
 
 def move_knife_to_butterfly(knife, butterfly)
   diff_x = butterfly[:x] - knife[:bottom][:x]
@@ -255,6 +262,8 @@ def render_butterfly(butterfly, knife, outputs, audio)
       w: 275, h: 200,
       path: "sprites/slash/File#{(knife[:ticks_since_cut] / 3).floor + 1}.png"
     }.sprite!
+
+    outputs.primitives << knife[:cut_hitbox].to_border(r: 255, g: 0, b: 0) if $debug.debug_mode?
   end
 
   return unless $debug.debug_mode?
