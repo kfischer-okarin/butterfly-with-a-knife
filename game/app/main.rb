@@ -20,6 +20,7 @@ def setup(args)
     KNIFE_MASS,
     x: 640, y: 260, length: KNIFE_LENGTH * LENGTH_FACTOR, angle: 270
   ).merge!(
+    ticks_since_cut: 0,
     ticks_since_audio: 0
   )
   update_knife_points args.state.knife
@@ -158,8 +159,14 @@ def update_knife(knife)
   )
 
   # 0 degree is down, 90 is right, 180 is up, 270 is left
-  knife[:cut] = knife[:angle] > 100 && knife[:angle] < 120 && knife[:v_angle] < -3 && knife[:tip_speed] > 7
+  knife[:cut] = knife[:angle] > 100 && knife[:angle] < 120 && knife[:v_angle] < -3 && knife[:tip_speed] > 7 &&
+                knife[:ticks_since_cut] > 20
   knife[:ticks_since_audio] += 1
+  knife[:ticks_since_cut] += 1
+  if knife[:cut]
+    knife[:cut_position] = knife[:blade_top].dup
+    knife[:ticks_since_cut] = 0
+  end
 end
 
 def check_knife_collision(knife, spider)
@@ -240,6 +247,14 @@ def render_butterfly(butterfly, knife, outputs, audio)
       input: "audio/woosh#{(rand * 3).ceil}.wav",
       pitch: 0.5 + (rand * 0.5)
     }
+  end
+
+  if knife[:ticks_since_cut] < 18 && knife[:cut_position]
+    outputs.primitives << {
+      x: knife[:cut_position][:x] - 100, y: knife[:cut_position][:y] - 150,
+      w: 275, h: 200,
+      path: "sprites/slash/File#{(knife[:ticks_since_cut] / 3).floor + 1}.png"
+    }.sprite!
   end
 
   return unless $debug.debug_mode?
