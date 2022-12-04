@@ -97,8 +97,8 @@ class PointRotator
 
   def rotate(relative_point)
     {
-      x: @center[:x] + (relative_point[:x] * @cos - relative_point[:y] * @sin),
-      y: @center[:y] + (relative_point[:x] * @sin + relative_point[:y] * @cos)
+      x: @center[:x] + (relative_point[:x] * @cos) - (relative_point[:y] * @sin),
+      y: @center[:y] + (relative_point[:x] * @sin) + (relative_point[:y] * @cos)
     }
   end
 end
@@ -150,6 +150,20 @@ def update_butterfly(butterfly)
 end
 
 def update_knife(knife)
+  knife[:cut] = knife_cuts? knife
+  knife[:ticks_since_audio] += 1
+  knife[:ticks_since_cut] += 1
+  return unless knife[:cut]
+
+  knife[:cut_position] = knife[:blade_top].dup
+  knife[:cut_hitbox] = {
+    x: knife[:cut_position][:x], y: knife[:cut_position][:y] - 130,
+    w: 160, h: 160
+  }
+  knife[:ticks_since_cut] = 0
+end
+
+def knife_cuts?(knife)
   knife[:tip_v] = {
     x: knife[:blade_top][:x] - knife[:previous_blade_top][:x],
     y: knife[:blade_top][:y] - knife[:previous_blade_top][:y]
@@ -159,18 +173,8 @@ def update_knife(knife)
   )
 
   # 0 degree is down, 90 is right, 180 is up, 270 is left
-  knife[:cut] = knife[:angle] > 100 && knife[:angle] < 120 && knife[:v_angle] < -3 && knife[:tip_speed] > 7 &&
-                knife[:ticks_since_cut] > 20
-  knife[:ticks_since_audio] += 1
-  knife[:ticks_since_cut] += 1
-  if knife[:cut]
-    knife[:cut_position] = knife[:blade_top].dup
-    knife[:cut_hitbox] = {
-      x: knife[:cut_position][:x], y: knife[:cut_position][:y] - 130,
-      w: 160, h: 160
-    }
-    knife[:ticks_since_cut] = 0
-  end
+  knife[:angle] > 100 && knife[:angle] < 120 && knife[:v_angle] < -3 && knife[:tip_speed] > 7 &&
+    knife[:ticks_since_cut] > 20
 end
 
 def check_knife_collision(knife, spider)
