@@ -70,7 +70,7 @@ def process_inputs(inputs)
 end
 
 def update(state, input_commands)
-  apply_input_commands(state.butterfly, input_commands)
+  apply_input_commands(state, input_commands)
   update_knife_points(state.knife)
   apply_gravity(state.butterfly)
   apply_gravity(state.knife)
@@ -83,7 +83,19 @@ def update(state, input_commands)
   update_spider(state.spider)
 end
 
-def apply_input_commands(butterfly, input_commands)
+def apply_input_commands(state, input_commands)
+  butterfly = state.butterfly
+  if state.spider[:state] == :dead
+    move = 0
+    move = -1 if state.butterfly[:x] > 960
+    move = 1 if state.butterfly[:x] < 320
+    input_commands = {
+      flap: state.tick_count.mod_zero?(19) && state.butterfly[:y] < 360,
+      move: move
+    }
+  end
+
+
   if input_commands[:flap]
     butterfly[:F_y] += FLAP_FORCE
     butterfly[:ticks_since_flap] = -1
