@@ -83,7 +83,6 @@ end
 def update_knife_points(knife)
   rotator = PointRotator.new knife, knife[:angle]
   knife[:bottom] = rotator.rotate(x: 0, y: KNIFE_HALF_LENGTH)
-  knife[:blade_bottom] = rotator.rotate(x: -20, y: 40)
   knife[:previous_blade_top] = knife[:blade_top] || rotator.rotate(x: 0, y: -80)
   knife[:blade_top] = rotator.rotate(x: 0, y: -80)
 end
@@ -276,7 +275,6 @@ def render_butterfly(butterfly, knife, outputs, audio)
   outputs.primitives << knife_rect.to_sprite(path: :pixel, r: 255, g: 0, b: 0, a: 64)
   outputs.primitives << { x: butterfly[:x] - 8, y: butterfly[:y] - 8, w: 16, h: 16, r: 255 }.solid!
   outputs.primitives << { x: knife[:x] - 8, y: knife[:y] - 8, w: 16, h: 16, r: 255 }.solid!
-  outputs.primitives << { x: knife[:blade_bottom][:x] - 8, y: knife[:blade_bottom][:y] - 8, w: 16, h: 16, g: 255 }.solid!
   outputs.primitives << { x: knife[:blade_top][:x] - 8, y: knife[:blade_top][:y] - 8, w: 16, h: 16, g: 255 }.solid!
   outputs.primitives << { x: knife[:bottom][:x]  - 8, y: knife[:bottom][:y] - 8, w: 16, h: 16, r: 255 }.solid!
 end
