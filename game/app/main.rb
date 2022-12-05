@@ -78,6 +78,7 @@ def update(state)
   update_butterfly(state.butterfly)
   update_knife(state.knife)
   check_knife_collision(state.knife, state.spider)
+  update_spider(state.spider)
 end
 
 def update_knife_points(knife)
@@ -177,15 +178,14 @@ def knife_cuts?(knife)
 end
 
 def check_knife_collision(knife, spider)
-  if knife[:ticks_since_cut] < 3 && knife[:cut_hitbox]
-    spider_hitbox = {
-      x: spider[:x] - 37, y: spider[:y] - 37, w: 75, h: 75
-    }
+  spider[:hit] = knife[:ticks_since_cut] < 3 && knife[:cut_hitbox] &&
+                 knife[:cut_hitbox].intersect_rect?(spider[:hitbox])
+end
 
-    spider[:hit] = knife[:cut_hitbox].intersect_rect?(spider_hitbox)
-  else
-    spider[:hit] = false
-  end
+def update_spider(spider)
+  spider[:hitbox] = {
+    x: spider[:x] - 65, y: spider[:y] - 50, w: 130, h: 100
+  }
 end
 
 # def line_circle_intersection(line, circle)
@@ -282,7 +282,10 @@ end
 def render_spider(spider, outputs)
   color = spider[:hit] ? { r: 255, g: 0, b: 0 } : { r: 255, g: 255, b: 255 }
   outputs.primitives << { x: spider[:x] - 77, y: spider[:y] - 65, w: 155, h: 130, path: 'sprites/spider_body.png' }.sprite!(color)
-  outputs.primitives << { x: spider[:x] - 8, y: spider[:y] - 8, w: 16, h: 16, r: 255 }.solid! if $debug.debug_mode?
+  return unless $debug.debug_mode?
+
+  outputs.primitives << spider[:hitbox].to_border(r: 255, g: 0, b: 0)
+  outputs.primitives << { x: spider[:x] - 8, y: spider[:y] - 8, w: 16, h: 16, r: 255 }.solid!
 end
 
 def render_ui(state, outputs)
