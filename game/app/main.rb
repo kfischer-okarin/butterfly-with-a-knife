@@ -28,6 +28,7 @@ def setup(args)
   args.state.start_time = Time.now.to_f
   move_knife_to_butterfly(args.state.knife, args.state.butterfly)
   args.state.game_state = :playing
+  args.state.remaining_time = 20
 end
 
 def build_point_mass(mass, **values)
@@ -82,6 +83,7 @@ def update(state, input_commands)
   update_knife(state.knife)
   check_knife_collision(state.knife, state.spider)
   update_spider(state.spider)
+  check_spider_collision(state.butterfly, state.spider)
   update_game(state)
 end
 
@@ -96,6 +98,8 @@ def apply_input_commands(state, input_commands)
       flap: state.tick_count.mod_zero?(19) && butterfly[:y] < 360,
       move: move
     }
+  when :lose
+    return
   end
 
   if input_commands[:flap]
@@ -249,11 +253,19 @@ def update_spider(spider)
   end
 end
 
+def check_spider_collision(butterfly, spider)
+  return if spider[:state] == :dead
+
+  butterfly[:hit] = spider[:hitbox].intersect_rect?(butterfly[:hitbox])
+end
+
 def update_game(state)
   case state.game_state
   when :playing
     if state.spider[:state] == :dead
       state.game_state = :win
+    elsif state.butterfly[:hit] || state.remaining_time <= 0
+      state.game_state = :lose
     end
     state.remaining_time = [20 - (Time.now.to_f - state.start_time).floor, 0].max
   end
@@ -308,7 +320,7 @@ def render_butterfly(butterfly, knife, outputs, audio)
   suffix = butterfly[:ticks_since_flap] < 5 ? '_flap.png' : '.png'
   outputs.primitives << {
     x: butterfly[:x] - 93, y: butterfly[:y] - 50, w: 187, h: 196,
-    path: "sprites/butterfly#{suffix}"
+    path: "sprites/butterfly#{suffix}", angle: butterfly[:angle]
   }.sprite!
   knife_rect = {
     x: knife[:x] - 30, y: knife[:y] - KNIFE_HALF_LENGTH,
@@ -428,6 +440,14 @@ def render_ui(state, outputs)
       size_enum: 5,
       alignment_enum: 1,
       text: 'You Win!'
+    }.label!
+  when :lose
+    outputs.primitives << {
+      x: 640,
+      y: 600,
+      size_enum: 5,
+      alignment_enum: 1,
+      text: 'You Lose!'
     }.label!
   end
   return unless $debug.debug_mode?
