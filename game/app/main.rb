@@ -98,7 +98,7 @@ def apply_input_commands(state, input_commands)
       flap: state.tick_count.mod_zero?(19) && butterfly[:y] < 360,
       move: move
     }
-  when :lose
+  when :dead, :time_up
     return
   end
 
@@ -264,8 +264,10 @@ def update_game(state)
   when :playing
     if state.spider[:state] == :dead
       state.game_state = :win
-    elsif state.butterfly[:hit] || state.remaining_time <= 0
-      state.game_state = :lose
+    elsif state.butterfly[:hit]
+      state.game_state = :dead
+    elsif state.remaining_time <= 0
+      state.game_state = :time_up
     end
     state.remaining_time = [20 - (Time.now.to_f - state.start_time).floor, 0].max
   end
@@ -432,22 +434,18 @@ def render_ui(state, outputs)
     alignment_enum: 1,
     text: format('%02d', state.remaining_time),
   }.label!
-  case state.game_state
-  when :win
+  unless state.game_state == :playing
+    message = case state.game_state
+              when :win then 'You Win!'
+              when :dead then 'You touched the spider and are dead!'
+              when :time_up then "Time's up!"
+              end
     outputs.primitives << {
       x: 640,
       y: 600,
       size_enum: 5,
       alignment_enum: 1,
-      text: 'You Win!'
-    }.label!
-  when :lose
-    outputs.primitives << {
-      x: 640,
-      y: 600,
-      size_enum: 5,
-      alignment_enum: 1,
-      text: 'You Lose!'
+      text: message
     }.label!
   end
   return unless $debug.debug_mode?
