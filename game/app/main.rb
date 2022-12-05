@@ -24,7 +24,7 @@ def setup(args)
     ticks_since_audio: 0
   )
   update_knife_points args.state.knife
-  args.state.spider = { x: 1000, y: 200 }
+  args.state.spider = { x: 1000, y: 150 }
   args.state.start_time = Time.now.to_f
   move_knife_to_butterfly(args.state.knife, args.state.butterfly)
 end
@@ -281,7 +281,7 @@ end
 
 def render_spider(spider, outputs)
   color = spider[:hit] ? { r: 255, g: 0, b: 0 } : { r: 255, g: 255, b: 255 }
-  outputs.primitives << { x: spider[:x] - 75, y: spider[:y] - 75, w: 150, h: 150, path: 'sprites/spider_body.png' }.sprite!(color)
+  outputs.primitives << { x: spider[:x] - 77, y: spider[:y] - 65, w: 155, h: 130, path: 'sprites/spider_body.png' }.sprite!(color)
   outputs.primitives << { x: spider[:x] - 8, y: spider[:y] - 8, w: 16, h: 16, r: 255 }.solid! if $debug.debug_mode?
 end
 
