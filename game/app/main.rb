@@ -27,6 +27,7 @@ def setup(args)
   args.state.spider = { x: 1000, y: 0, state: :walk, direction: :left, ticks_in_state: 0 }
   args.state.start_time = Time.now.to_f
   move_knife_to_butterfly(args.state.knife, args.state.butterfly)
+  args.state.game_state = :playing
 end
 
 def build_point_mass(mass, **values)
@@ -81,20 +82,21 @@ def update(state, input_commands)
   update_knife(state.knife)
   check_knife_collision(state.knife, state.spider)
   update_spider(state.spider)
+  update_game(state)
 end
 
 def apply_input_commands(state, input_commands)
   butterfly = state.butterfly
-  if state.spider[:state] == :dead
+  case state.game_state
+  when :win
     move = 0
-    move = -1 if state.butterfly[:x] > 960
-    move = 1 if state.butterfly[:x] < 320
+    move = -1 if butterfly[:x] > 960
+    move = 1 if butterfly[:x] < 320
     input_commands = {
-      flap: state.tick_count.mod_zero?(19) && state.butterfly[:y] < 360,
+      flap: state.tick_count.mod_zero?(19) && butterfly[:y] < 360,
       move: move
     }
   end
-
 
   if input_commands[:flap]
     butterfly[:F_y] += FLAP_FORCE
@@ -244,6 +246,16 @@ def update_spider(spider)
     apply_gravity(spider[:right_half])
     update_body(spider[:left_half])
     update_body(spider[:right_half])
+  end
+end
+
+def update_game(state)
+  case state.game_state
+  when :playing
+    if state.spider[:state] == :dead
+      state.game_state = :win
+    end
+    state.remaining_time = [20 - (Time.now.to_f - state.start_time).floor, 0].max
   end
 end
 
@@ -401,14 +413,23 @@ def render_spider_legs(outputs, spider, sprite_rect)
 end
 
 def render_ui(state, outputs)
-  remaining_time = [20 - (Time.now.to_f - state.start_time).floor, 0].max
   outputs.primitives << {
     x: 640,
     y: 700,
     size_enum: 5,
     alignment_enum: 1,
-    text: '%02d' % remaining_time,
+    text: format('%02d', state.remaining_time),
   }.label!
+  case state.game_state
+  when :win
+    outputs.primitives << {
+      x: 640,
+      y: 600,
+      size_enum: 5,
+      alignment_enum: 1,
+      text: 'You Win!'
+    }.label!
+  end
   return unless $debug.debug_mode?
 
   $debug.log "knife tip speed: #{state.knife[:tip_speed]}"
