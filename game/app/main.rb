@@ -67,7 +67,8 @@ def process_inputs(inputs)
   keyboard = inputs.keyboard
   {
     flap: keyboard.key_down.space,
-    move: keyboard.left_right
+    move: keyboard.left_right,
+    reset: keyboard.key_down.enter
   }
 end
 
@@ -94,11 +95,13 @@ def apply_input_commands(state, input_commands)
     move = 0
     move = -1 if butterfly[:x] > 960
     move = 1 if butterfly[:x] < 320
+    $gtk.reset_next_tick if input_commands[:reset]
     input_commands = {
       flap: state.tick_count.mod_zero?(19) && butterfly[:y] < 360,
       move: move
     }
   when :dead, :time_up
+    $gtk.reset_next_tick if input_commands[:reset]
     return
   end
 
@@ -446,6 +449,13 @@ def render_ui(state, outputs)
       size_enum: 5,
       alignment_enum: 1,
       text: message
+    }.label!
+    outputs.primitives << {
+      x: 640,
+      y: 550,
+      size_enum: 5,
+      alignment_enum: 1,
+      text: 'Press Enter to Retry!'
     }.label!
   end
   return unless $debug.debug_mode?
