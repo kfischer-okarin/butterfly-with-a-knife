@@ -6,8 +6,8 @@ require 'app/resources.rb'
 
 def tick(args)
   setup(args) if args.tick_count.zero?
-  process_inputs(args.inputs, args.state)
-  update(args.state)
+  input_commands = process_inputs(args.inputs)
+  update(args.state, input_commands)
   render(args.state, args.outputs, args.audio)
 end
 
@@ -61,16 +61,16 @@ GRAVITY = 0.1
 
 CONNECTION_STRENGTH = 0.03
 
-def process_inputs(inputs, state)
+def process_inputs(inputs)
   keyboard = inputs.keyboard
-  if keyboard.key_down.space
-    state.butterfly[:F_y] += FLAP_FORCE
-    state.butterfly[:ticks_since_flap] = -1
-  end
-  state.butterfly[:F_x] += keyboard.left_right * HORIZONTAL_FORCE
+  {
+    flap: keyboard.key_down.space,
+    move: keyboard.left_right
+  }
 end
 
-def update(state)
+def update(state, input_commands)
+  apply_input_commands(state.butterfly, input_commands)
   update_knife_points(state.knife)
   apply_gravity(state.butterfly)
   apply_gravity(state.knife)
@@ -81,6 +81,16 @@ def update(state)
   update_knife(state.knife)
   check_knife_collision(state.knife, state.spider)
   update_spider(state.spider)
+end
+
+def apply_input_commands(butterfly, input_commands)
+  if input_commands[:flap]
+    butterfly[:F_y] += FLAP_FORCE
+    butterfly[:ticks_since_flap] = -1
+  end
+  if input_commands[:move] != 0
+    butterfly[:F_x] += input_commands[:move] * HORIZONTAL_FORCE
+  end
 end
 
 def update_knife_points(knife)
