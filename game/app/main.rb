@@ -147,6 +147,12 @@ end
 def update_butterfly(butterfly)
   butterfly[:ticks_since_flap] += 1
   butterfly[:ticks_since_audio] += 1
+  butterfly[:hitbox] = {
+    x: butterfly[:x] - 70,
+    y: butterfly[:y],
+    w: 120,
+    h: 130
+  }
 end
 
 def update_knife(knife)
@@ -235,8 +241,10 @@ end
 
 def render_butterfly(butterfly, knife, outputs, audio)
   suffix = butterfly[:ticks_since_flap] < 5 ? '_flap.png' : '.png'
-  rect = { x: butterfly[:x] - 93, y: butterfly[:y] - 50, w: 187, h: 196 }
-  outputs.primitives << rect.to_sprite(path: "sprites/butterfly#{suffix}")
+  outputs.primitives << {
+    x: butterfly[:x] - 93, y: butterfly[:y] - 50, w: 187, h: 196,
+    path: "sprites/butterfly#{suffix}"
+  }.sprite!
   knife_rect = {
     x: knife[:x] - 30, y: knife[:y] - KNIFE_HALF_LENGTH,
     w: 61, h: KNIFE_LENGTH,
@@ -271,7 +279,7 @@ def render_butterfly(butterfly, knife, outputs, audio)
 
   return unless $debug.debug_mode?
 
-  outputs.primitives << rect.to_border(r: 255)
+  outputs.primitives << butterfly[:hitbox].to_border(r: 255)
   outputs.primitives << knife_rect.to_sprite(path: :pixel, r: 255, g: 0, b: 0, a: 64)
   outputs.primitives << { x: butterfly[:x] - 8, y: butterfly[:y] - 8, w: 16, h: 16, r: 255 }.solid!
   outputs.primitives << { x: knife[:x] - 8, y: knife[:y] - 8, w: 16, h: 16, r: 255 }.solid!
