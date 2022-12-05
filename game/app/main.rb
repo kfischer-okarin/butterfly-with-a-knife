@@ -24,7 +24,7 @@ def setup(args)
     ticks_since_audio: 0
   )
   update_knife_points args.state.knife
-  args.state.spider = { x: 1000, y: 0 }
+  args.state.spider = { x: 1000, y: 0, state: :walk, direction: :left, ticks_in_state: 0 }
   args.state.start_time = Time.now.to_f
   move_knife_to_butterfly(args.state.knife, args.state.butterfly)
 end
@@ -192,6 +192,17 @@ def update_spider(spider)
   spider[:hitbox] = {
     x: spider[:x] - 65, y: spider[:y] + 60, w: 130, h: 100
   }
+  spider[:ticks_in_state] += 1
+  case spider[:state]
+  when :walk
+    sign = spider[:direction] == :left ? -1 : 1
+    spider[:x] += sign * 2
+    if spider[:x] <= 130
+      spider[:direction] = :right
+    elsif spider[:x] >= 1150
+      spider[:direction] = :left
+    end
+  end
 end
 
 # def line_circle_intersection(line, circle)
@@ -290,12 +301,28 @@ end
 def render_spider(spider, outputs)
   color = spider[:hit] ? { r: 255, g: 0, b: 0 } : { r: 255, g: 255, b: 255 }
   sprite_rect = { x: spider[:x] - 180, y: spider[:y], w: 344, h: 236 }
-  outputs.primitives << sprite_rect.to_sprite(path: 'sprites/spider_legs_idle.png')
+  render_spider_legs outputs, spider, sprite_rect
   outputs.primitives << sprite_rect.to_sprite(path: 'sprites/spider_body.png', **color)
   return unless $debug.debug_mode?
 
   outputs.primitives << spider[:hitbox].to_border(r: 255, g: 0, b: 0)
   outputs.primitives << { x: spider[:x] - 8, y: spider[:y] - 8, w: 16, h: 16, r: 255 }.solid!
+end
+
+def render_spider_legs(outputs, spider, sprite_rect)
+  case spider[:state]
+  when :idle
+    outputs.primitives << sprite_rect.to_sprite(path: 'sprites/spider_legs_idle.png')
+  when :walk
+    frame = (spider[:ticks_in_state] / 10).floor % 4
+    path = case frame
+           when 0 then "sprites/spider_legs_#{spider[:direction]}1.png"
+           when 1 then 'sprites/spider_legs_idle.png'
+           when 2 then "sprites/spider_legs_#{spider[:direction]}2.png"
+           when 3 then 'sprites/spider_legs_idle.png'
+           end
+    outputs.primitives << sprite_rect.to_sprite(path: path)
+  end
 end
 
 def render_ui(state, outputs)
