@@ -24,7 +24,7 @@ def setup(args)
     ticks_since_audio: 0
   )
   update_knife_points args.state.knife
-  args.state.spider = { x: 1000, y: 150 }
+  args.state.spider = { x: 1000, y: 0 }
   args.state.start_time = Time.now.to_f
   move_knife_to_butterfly(args.state.knife, args.state.butterfly)
 end
@@ -190,7 +190,7 @@ end
 
 def update_spider(spider)
   spider[:hitbox] = {
-    x: spider[:x] - 65, y: spider[:y] - 50, w: 130, h: 100
+    x: spider[:x] - 65, y: spider[:y] + 60, w: 130, h: 100
   }
 end
 
@@ -234,8 +234,8 @@ def apply_force(body, force:, position: nil)
 end
 
 def render(state, outputs, audio)
-  render_butterfly state.butterfly, state.knife, outputs, audio
   render_spider state.spider, outputs
+  render_butterfly state.butterfly, state.knife, outputs, audio
   render_ui state, outputs
 end
 
@@ -289,7 +289,9 @@ end
 
 def render_spider(spider, outputs)
   color = spider[:hit] ? { r: 255, g: 0, b: 0 } : { r: 255, g: 255, b: 255 }
-  outputs.primitives << { x: spider[:x] - 77, y: spider[:y] - 65, w: 155, h: 130, path: 'sprites/spider_body.png' }.sprite!(color)
+  sprite_rect = { x: spider[:x] - 180, y: spider[:y], w: 344, h: 236 }
+  outputs.primitives << sprite_rect.to_sprite(path: 'sprites/spider_legs_idle.png')
+  outputs.primitives << sprite_rect.to_sprite(path: 'sprites/spider_body.png', **color)
   return unless $debug.debug_mode?
 
   outputs.primitives << spider[:hitbox].to_border(r: 255, g: 0, b: 0)
