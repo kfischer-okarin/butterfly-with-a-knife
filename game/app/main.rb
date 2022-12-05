@@ -30,7 +30,7 @@ def setup(args)
 end
 
 def build_point_mass(mass, **values)
-  build_rigid_body(values).merge!(m: mass, I: 0)
+  build_rigid_body(values).merge!(m: mass, I: 1)
 end
 
 def build_rod_mass(mass, length:, **values)
@@ -54,6 +54,8 @@ KNIFE_MASS = 2
 KNIFE_LENGTH = 200
 LENGTH_FACTOR = 0.15
 KNIFE_HALF_LENGTH = KNIFE_LENGTH / 2
+
+SPIDER_MASS = 1
 
 GRAVITY = 0.1
 
@@ -193,6 +195,19 @@ def update_spider(spider)
     x: spider[:x] - 65, y: spider[:y] + 60, w: 130, h: 100
   }
   spider[:ticks_in_state] += 1
+  if spider[:hit]
+    spider[:state] = :dead
+    spider[:ticks_in_state] = 0
+    spider[:left_half] = build_point_mass(SPIDER_MASS, x: spider[:x] - 33, y: spider[:y] + 110)
+    spider[:left_half][:v_x] = -3
+    spider[:left_half][:v_y] = 5
+    spider[:left_half][:v_angle] = 1
+    spider[:right_half] = build_point_mass(SPIDER_MASS, x: spider[:x] + 33, y: spider[:y] + 110)
+    spider[:right_half][:v_x] = 3
+    spider[:right_half][:v_y] = 5
+    spider[:right_half][:v_angle] = -1
+  end
+
   case spider[:state]
   when :walk
     sign = spider[:direction] == :left ? -1 : 1
@@ -202,6 +217,11 @@ def update_spider(spider)
     elsif spider[:x] >= 1150
       spider[:direction] = :left
     end
+  when :dead
+    apply_gravity(spider[:left_half])
+    apply_gravity(spider[:right_half])
+    update_body(spider[:left_half])
+    update_body(spider[:right_half])
   end
 end
 
@@ -299,14 +319,44 @@ def render_butterfly(butterfly, knife, outputs, audio)
 end
 
 def render_spider(spider, outputs)
-  color = spider[:hit] ? { r: 255, g: 0, b: 0 } : { r: 255, g: 255, b: 255 }
   sprite_rect = { x: spider[:x] - 180, y: spider[:y], w: 344, h: 236 }
-  render_spider_legs outputs, spider, sprite_rect
-  outputs.primitives << sprite_rect.to_sprite(path: 'sprites/spider_body.png', **color)
+  if spider[:state] == :dead
+    render_spider_dead outputs, spider, sprite_rect
+  else
+    render_spider_alive outputs, spider, sprite_rect
+  end
   return unless $debug.debug_mode?
 
   outputs.primitives << spider[:hitbox].to_border(r: 255, g: 0, b: 0)
   outputs.primitives << { x: spider[:x] - 8, y: spider[:y] - 8, w: 16, h: 16, r: 255 }.solid!
+end
+
+def render_spider_dead(outputs, spider, sprite_rect)
+  render_spider_legs outputs, spider, sprite_rect
+  alpha = 255 * (1 - (spider[:ticks_in_state] / 60))
+  outputs.primitives << sprite_rect.to_sprite(
+    path: 'sprites/spider_dead_body.png',
+    x: spider[:left_half][:x] - 42, y: spider[:left_half][:y] - 110, w: 75,
+    angle: spider[:left_half][:angle],
+    source_x: 105, source_y: 0, source_w: 75, source_h: 236,
+    a: alpha
+  )
+  outputs.primitives << sprite_rect.to_sprite(
+    path: 'sprites/spider_dead_body.png',
+    x: spider[:right_half][:x] - 33, y: spider[:right_half][:y] - 110, w: 75,
+    angle: spider[:right_half][:angle],
+    source_x: 180, source_y: 0, source_w: 75, source_h: 236,
+    a: alpha
+  )
+  return unless $debug.debug_mode?
+
+  outputs.primitives << { x: spider[:left_half][:x] - 8, y: spider[:left_half][:y] - 8, w: 16, h: 16, r: 255 }.solid!
+  outputs.primitives << { x: spider[:right_half][:x] - 8, y: spider[:right_half][:y] - 8, w: 16, h: 16, r: 255 }.solid!
+end
+
+def render_spider_alive(outputs, spider, sprite_rect)
+  render_spider_legs outputs, spider, sprite_rect
+  outputs.primitives << sprite_rect.to_sprite(path: 'sprites/spider_body.png')
 end
 
 def render_spider_legs(outputs, spider, sprite_rect)
@@ -322,6 +372,9 @@ def render_spider_legs(outputs, spider, sprite_rect)
            when 3 then 'sprites/spider_legs_idle.png'
            end
     outputs.primitives << sprite_rect.to_sprite(path: path)
+  when :dead
+    h = [236 - (spider[:ticks_in_state] * 10), 0].max
+    outputs.primitives << sprite_rect.to_sprite(path: 'sprites/spider_legs_idle.png', h: h)
   end
 end
 
