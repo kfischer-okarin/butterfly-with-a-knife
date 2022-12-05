@@ -221,13 +221,13 @@ def update_spider(spider)
     spider[:state] = :dead
     spider[:ticks_in_state] = 0
     spider[:left_half] = build_point_mass(SPIDER_MASS, x: spider[:x] - 33, y: spider[:y] + 110)
-    spider[:left_half][:v_x] = -3
-    spider[:left_half][:v_y] = 5
-    spider[:left_half][:v_angle] = 1
+    spider[:left_half][:v_x] = -4
+    spider[:left_half][:v_y] = 8
+    spider[:left_half][:v_angle] = 2
     spider[:right_half] = build_point_mass(SPIDER_MASS, x: spider[:x] + 33, y: spider[:y] + 110)
-    spider[:right_half][:v_x] = 3
-    spider[:right_half][:v_y] = 5
-    spider[:right_half][:v_angle] = -1
+    spider[:right_half][:v_x] = 4
+    spider[:right_half][:v_y] = 8
+    spider[:right_half][:v_angle] = -2
   end
 
   case spider[:state]
