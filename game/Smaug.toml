@@ -1,7 +1,7 @@
 [project]
 name = "butterfly_with_a_knife"
 title = "Butterfly with a knife"
-version = "0.2.0"
+version = "0.3.0"
 authors = ["Kevin Fischer"]
 icon = "metadata/icon.png"
 compile_ruby = false
